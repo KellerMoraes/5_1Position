@@ -1,0 +1,13 @@
+services:
+  vue-dev:
+    build: .
+    container_name: vue3-dev
+    working_dir: /app
+    volumes:
+      - .:/app                # Monta o código local dentro do container
+      - /app/node_modules     # Evita conflito com node_modules da máquina
+    ports:
+      - "5173:5173"           # Porta padrão do Vite
+    environment:
+      - HOST=0.0.0.0          # Necessário para Vite aceitar conexões externas
+    command: npm run dev
