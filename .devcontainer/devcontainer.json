@@ -1,7 +1,7 @@
 {
   "name": "5_1",
   "dockerComposeFile": ["../docker-compose.yml"],
-  "service": "front-end",
+  "service": "vue-dev",
   "workspaceFolder": "/app",
   "settings": {
     "terminal.integrated.defaultProfile.linux": "bash",
