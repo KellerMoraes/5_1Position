@@ -10,10 +10,9 @@ COPY package*.json ./
 RUN npm install
 
 # Copia o restante do código
-COPY . .
 
 # Expõe a porta padrão do Vite (5173)
 EXPOSE 5173
 
 # Comando padrão para iniciar o servidor de desenvolvimento
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "dev", "--", "--host"]

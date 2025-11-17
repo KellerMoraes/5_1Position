@@ -6,10 +6,10 @@
 
 // Plugins
 import { registerPlugins } from '@/plugins'
+import { MotionPlugin } from '@vueuse/motion'
 
 // Components
 import App from './App.vue'
-import VueKonva from 'vue-konva';
 // Composables
 import { createApp } from 'vue'
 
@@ -17,7 +17,6 @@ import { createApp } from 'vue'
 import 'unfonts.css'
 
 const app = createApp(App)
-
+app.use(MotionPlugin)
 registerPlugins(app)
-app.use(VueKonva);
 app.mount('#app')
