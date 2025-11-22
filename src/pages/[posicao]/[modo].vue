@@ -1,23 +1,27 @@
 <template>
     <div id="rotatable">
         <div class="content">
-            <Court />
-            <div class="info">
-                <v-card class="info-card" width="100%" height="100%" color="transparent">
-                    <v-card-title>Configuração</v-card-title>
+            <Court v-model="resetFlag"></Court>
+            <div class="info" style="position: relative;">
+                <v-card flat color="transparent" height="100%">
+                    <v-card-title class="text-center">Configuração</v-card-title>
                     <v-card-text>
-                        <v-list>
-                            <v-list-item>
-                                Posição Selecionada: {{ route.params.posicao }}
-                            </v-list-item>
-                            <v-list-item>
-                                Modo Selecionada: {{ route.params.modo }}
-                            </v-list-item>
-                        </v-list>
+                        <v-list-item class="text-center">
+                            Posição Selecionada:
+                            <v-chip variant="flat" color="primary">
+                                {{ route.params.posicao }}
+                            </v-chip>
+                        </v-list-item>
+                        <v-list-item class="text-center">
+                            Modo Selecionada:
+                            <v-chip variant="flat" color="primary">
+                                {{ route.params.modo }}
+                            </v-chip>
+                        </v-list-item>
                     </v-card-text>
-                    <v-card-actions>
-                        <v-btn>Voltar</v-btn>
-                        <v-btn>Resetar</v-btn>
+                    <v-card-actions style="position: absolute; bottom: 0;">
+                        <v-btn stacked to="/"><v-icon>mdi-arrow-left</v-icon>Voltar</v-btn>
+                        <v-btn stacked @click="resetFlag = true"><v-icon>mdi-sync</v-icon>Resetar</v-btn>
                     </v-card-actions>
                 </v-card>
             </div>
@@ -27,6 +31,8 @@
 
 <script setup>
 const route = useRoute()
+const resetFlag = ref(false)
+
 </script>
 
 <style scoped>
@@ -46,9 +52,9 @@ const route = useRoute()
 
 /* INFO NORMAL (LANDSCAPE REAL) */
 .info {
-    width: 40vw;
-    height: 100vh;
-    background: rgb(16, 119, 255);
+    width: 40dvw;
+    height: 100dvh;
+    background: rgb(56, 56, 56);
 }
 
 /* ROTACIONAR TUDO EM PORTRAIT */
@@ -70,9 +76,9 @@ const route = useRoute()
     }
 
     .info {
-        width: 60vh;
+        width: 40dvh;
         /* equivalente ao landscape */
-        height: 100vw;
+        height: 100dvw;
     }
 }
 </style>
