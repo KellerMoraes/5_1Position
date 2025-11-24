@@ -1,5 +1,5 @@
 <template>
-  <v-card width="100%" height="100dvh" class="d-flex justify-start pa-7" >
+  <v-card width="100%" height="100dvh" class="d-flex justify-start pa-7">
     <v-card ref="courtRef" class="court" color="orange" style="
         border: 2px solid white;
         border-right: 8px dashed white;
@@ -38,7 +38,7 @@
         <div v-if="overlay" class="overlay-bg" @click="nextMove" />
       </Transition>
 
-      <div v-if="overlay" class="toque" style="position:fixed; top:2%; right:50%; color:white;">
+      <div v-if="overlay" class="toque">
         {{ toqueMsg }}
       </div>
 
@@ -82,7 +82,8 @@ const courtSize = ref({ w: 0, h: 0 });
 
 const route = useRoute();
 const model = defineModel();
-
+const params = defineModel('params')
+console.log(params.value)
 /* =========================
    WATCHERS
 ========================= */
@@ -115,52 +116,36 @@ onMounted(async () => {
   window.addEventListener("resize", updateCourtSize);
   window.addEventListener("orientationchange", updateCourtSize);
   window.addEventListener("orientationchange", positionTokens);
-  checkOrientation()
+  // checkOrientation()
   window.addEventListener('resize', () => {
-  nextTick(() => {
-    updateCourtSize();
-    positionTokens();
+    nextTick(() => {
+      updateCourtSize();
+      positionTokens();
+    });
   });
-});
 });
 async function load() {
   await waitForTokenRefs();
   updateCourtSize();
   await nextTick();
   positionTokens()
-  // for (const id in tokenRefs.value) {
-  //   const el = tokenRefs.value[id];
-  //   const data = initial.value.find(p => p.id == id);
-  //   if (!el || !data) continue;
-
-  //   const motion = useMotion(el, {
-  //     initial: { x: XRes(data.x), y: YRes(data.y) }
-  //   });
-
-  //   motions.value[id] = motion;
-  //   tokenPositions.value[id] = { x: XRes(data.x), y: YRes(data.y) };
-  // }
 }
 function mostrarSetaRobusta(fromId, step) {
   const elFrom = tokenRefs.value[fromId];
-  const r = 22.5; // meio do avatar (px) — mantenha ou calcule dinamicamente se variar size
+  const avatarRadius = 22.5; // meio do avatar (px) — mantenha ou calcule dinamicamente se variar size
 
   const courtR = courtRect();
   if (!courtR) return;
 
   // rect do elemento atual (pega posição real na tela, inclusive se estiver animando)
-  const rectFrom = elRect(elFrom);
-  if (!rectFrom) return;
-
-  // Centro atual do token (em coordenadas relativas ao court)
-  const cx1 = rectFrom.left - courtR.left + rectFrom.width / 2;
-  const cy1 = rectFrom.top - courtR.top + rectFrom.height / 2;
+  const cx1 = tokenPositions.value[fromId].x + avatarRadius;
+  const cy1 = tokenPositions.value[fromId].y + avatarRadius;
 
   // Centro destino (calculado a partir de step.x/step.y -> usando XRes/YRes)
   const destX = XRes(step.x);
   const destY = YRes(step.y);
-  const cx2 = destX + rectFrom.width / 2; // se avatar tiver mesmo size; senão calcule a partir de size
-  const cy2 = destY + rectFrom.height / 2;
+  const cx2 = XRes(step.x) + avatarRadius;
+  const cy2 = YRes(step.y) + avatarRadius;
 
   // dx/dy no sistema de pixels (y cresce para baixo)
   const dx = cx2 - cx1;
@@ -174,8 +159,8 @@ function mostrarSetaRobusta(fromId, step) {
   const uy = dy / dist;
 
   // ponto de partida deslocado pelo raio (para não sair do centro do avatar)
-  const startX = cx1 + ux * r;
-  const startY = cy1 + uy * r;
+  const startX = cx1 + ux * avatarRadius;
+  const startY = cy1 + uy * avatarRadius;
 
   // comprimento da seta (metade da distância, por exemplo)
   const len = dist * 0.5;
@@ -183,6 +168,7 @@ function mostrarSetaRobusta(fromId, step) {
   const midY = startY + uy * (len / 2);
 
   // Atribui ao reactive usado pelo template (coordenadas em px relativas ao court)
+  console.log(ang - 90)
   arrowData.value = { x: midX, y: midY, angle: ang };
 }
 function elRect(el) {
@@ -200,45 +186,20 @@ function courtRect() {
   return node.getBoundingClientRect();
 }
 function positionTokens() {
-  const modo = route.params.modo;
-  const pos = posicao.value;
-  const steps = Movimentos[modo]?.[pos]?.steps || [];
-
   for (const id in tokenRefs.value) {
     const el = tokenRefs.value[id];
-
-    let stepData;
-
-    // Se a animação ainda não começou → usar initial
-    if (!started.value || stepI.value === 0) {
-      stepData = initial.value.find(p => p.id == id);
-    }
-    // Se já estamos no meio da animação → pegar posição atual do step
-    else {
-      const current = steps[stepI.value - 1]; // step atual já executado
-
-      if (current && current.id == id) {
-        // posição do step atual
-        stepData = current;
-      } else {
-        // posição atual armazenada (boa para tokens que não se movem neste step)
-        stepData = {
-          x: tokenPositions.value[id].x / courtSize.value.w,
-          y: tokenPositions.value[id].y / courtSize.value.h
-        };
-      }
-    }
-
-    if (!stepData) continue;
+    const data = initial.value.find(p => p.id == id);
+    if (!el || !data) continue;
 
     const motion = useMotion(el, {
-      initial: { x: XRes(stepData.x), y: YRes(stepData.y) }
+      initial: { x: XRes(data.x), y: YRes(data.y) }
     });
 
     motions.value[id] = motion;
-    tokenPositions.value[id] = { x: XRes(stepData.x), y: YRes(stepData.y) };
+    tokenPositions.value[id] = { x: XRes(data.x), y: YRes(data.y) };
   }
 }
+
 
 /* =========================
    FINALIZAR E RECARREGAR
@@ -292,7 +253,7 @@ const mapPapelParaShort = {
   Levantador: "Lev",
   Líbero: "L"
 };
-const papelUsuarioShort = mapPapelParaShort[route.params.posicao];
+const papelUsuarioShort = mapPapelParaShort[params.value.posicao];
 
 const rotacionar = (arr, d) =>
   arr.map((_, i) => arr[(i - d + arr.length) % arr.length]);
@@ -305,7 +266,9 @@ function calcularRotacao(posicaoClicada) {
 
 function aplicarShortnames(posicaoClicada) {
   const nomes = calcularRotacao(posicaoClicada);
-  initial.value = initial.value.map((t, i) => ({ ...t, shortName: nomes[i] }));
+  initial.value.forEach((t, i) => {
+    t.shortName = nomes[i];
+  });
 }
 
 /* =========================
@@ -363,52 +326,61 @@ async function executarMovimento(modo, posicao) {
 
 function executarInformacoes(modo, posicao) {
   const step = Movimentos[modo][posicao].steps[stepI.value];
-  // const pAtual = tokenPositions.value[step.id];
-  // const pNext = { x: XRes(step.x), y: YRes(step.y) };
 
+  // 👇 PEGA O PAPEL REAL DO JOGADOR NA ROTAÇÃO
+  const jogadorReal = initial.value.find(j => j.id === step.id);
+
+  // 👇 MOSTRA SETA NORMAL
   mostrarSetaRobusta(step.id, step);
 
   overlay.value = true;
   activeStep.value = step.id;
-  activeMessage.value = step.text;
-}
 
+  // 👇 AQUI ESTAVA O ERRO:
+  // activeMessage.value = step.text;  (ISTO IGNORA A ROTAÇÃO)
+  // ENTÃO TEMOS QUE SUBSTITUIR O SHORTNAME USADO NO PLAYBOOK
+  // PELO SHORTNAME REAL APÓS A ROTAÇÃO:
+
+  if (step.text) {
+    activeMessage.value = step.text
+      .replace(/\bOP\b/g, jogadorReal.shortName)
+      .replace(/\bP\b/g, jogadorReal.shortName)
+      .replace(/\bC\b/g, jogadorReal.shortName)
+      .replace(/\bLev\b/g, jogadorReal.shortName)
+      .replace(/\bL\b/g, jogadorReal.shortName);
+  } else {
+    activeMessage.value = null;
+  }
+}
 /* =========================
    CLICK INICIAL
 ========================= */
 async function startPlay(posi) {
   if (stepI.value !== 0) return;
 
-  started.value = true;
-  finalizando.value = false;
   posicao.value = posi;
 
-  aplicarShortnames(posi);
+  aplicarShortnames(posi); // agora troca os nomes corretos
+
+  // Resetar tudo para posição inicial ANTES de começar
+  positionTokens();
+
+  await nextTick();
+
+  started.value = true;
+  finalizando.value = false;
 
   toqueMsg.value = "Toque para continuar ";
-  executarInformacoes(route.params.modo, posi);
 
-  const step = Movimentos[route.params.modo][posi].steps[0];
-  const atual = initial.value.find(t => t.shortName === step.shortName);
-
-  const pAtual = tokenPositions.value[atual.id];
-  const pNext = { x: XRes(step.x), y: YRes(step.y) };
-
-  seta.value = {
-    x1: pAtual.x + 22,
-    y1: pAtual.y + 22,
-    x2: pAtual.x + 22 + (pNext.x - pAtual.x) * 0.5,
-    y2: pAtual.y + 22 + (pNext.y - pAtual.y) * 0.5
-  };
-
-  // mostrarSeta(pAtual, pNext);
+  // Mostrar informações do primeiro passo, mas não mover ainda
+  executarInformacoes(params.value.modo, posi);
 }
 
 /* =========================
    NEXT STEP
 ========================= */
 async function nextMove() {
-  const steps = Movimentos[route.params.modo][posicao.value].steps;
+  const steps = Movimentos[params.value.modo][posicao.value].steps;
 
   if (finalizando.value) {
     finish();
@@ -420,7 +392,7 @@ async function nextMove() {
   arrowData.value = null;
 
   await new Promise(r => setTimeout(r, 450));
-  await executarMovimento(route.params.modo, posicao.value);
+  await executarMovimento(params.value.modo, posicao.value);
 
   if (stepI.value >= steps.length) {
     toqueMsg.value = "Toque para terminar e resetar";
@@ -429,7 +401,7 @@ async function nextMove() {
     return;
   }
 
-  executarInformacoes(route.params.modo, posicao.value);
+  executarInformacoes(params.value.modo, posicao.value);
 }
 
 /* =========================
@@ -449,13 +421,27 @@ const initial = ref([
   { id: 1, x: 0.25, y: 0.87, shortName: "P" },
   { id: 2, x: 0.85, y: 0.87, shortName: "Lev" },
   { id: 3, x: 0.85, y: 0.49, shortName: "C" },
-  { id: 4, x: 0.85, y: 0.11, shortName: "P" },
+  { id: 4, x: 0.85, y: 0.11, shortName: "L" },
   { id: 5, x: 0.25, y: 0.11, shortName: "OP" },
-  { id: 6, x: 0.25, y: 0.49, shortName: "L" }
+  { id: 6, x: 0.25, y: 0.49, shortName: "P" }
 ]);
+// X = 0 -- Esquerda
+// X = 100 -- Direita
 
+// Y = 0 -- Cima
+// Y = 100 -- Baixo
 const Movimentos = {
   Recepcao: {
+    2: {
+      steps: [
+        { id: 1, x: 0.05, y: 0.87, shortName: "Lev", text: "só levanta...." },
+        { id: 5, x: 0, y: 0.11, shortName: "OP", text: "O Oposto recua, pois não participa da recepção." },
+        { id: 3, x: 0.85, y: 0.52, shortName: "C", text: "O Central não pode ultrapassar você à esquerda." },
+        { id: 4, x: 0.25, y: 0.87, shortName: "P", text: "Você (Ponteiro) recua para a linha de recepção." },
+        { id: 6, x: 0.23, y: 0.49, shortName: "L" },
+        { id: 1, x: 0.35, y: 0.87, shortName: "P" },
+      ]
+    },
     4: {
       steps: [
         { id: 5, x: 0, y: 0.11, shortName: "OP", text: "O Oposto recua, pois não participa da recepção." },
@@ -520,6 +506,9 @@ const Movimentos = {
 
 .toque {
   animation: toqueParaContinuar 3s infinite;
+  position: fixed;
+  color: white;
+  text-align: center;
 }
 
 .arrow {
