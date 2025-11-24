@@ -2,29 +2,29 @@
     <div id="rotatable">
         <div class="content">
             <Court v-model="resetFlag"></Court>
-            <div class="info" style="position: relative;">
-                <v-card flat color="transparent" height="100%">
-                    <v-card-title class="text-center">Configuração</v-card-title>
-                    <v-card-text>
-                        <v-list-item class="text-center">
-                            Posição Selecionada:
-                            <v-chip variant="flat" color="primary">
-                                {{ route.params.posicao }}
-                            </v-chip>
-                        </v-list-item>
-                        <v-list-item class="text-center">
-                            Modo Selecionada:
-                            <v-chip variant="flat" color="primary">
-                                {{ route.params.modo }}
-                            </v-chip>
-                        </v-list-item>
-                    </v-card-text>
-                    <v-card-actions style="position: absolute; bottom: 0;">
-                        <v-btn stacked to="/"><v-icon>mdi-arrow-left</v-icon>Voltar</v-btn>
-                        <v-btn stacked @click="resetFlag = true"><v-icon>mdi-sync</v-icon>Resetar</v-btn>
-                    </v-card-actions>
-                </v-card>
-            </div>
+                <div class="info" style="position: relative;">
+                    <v-card flat color="transparent" height="100%">
+                        <v-card-title class="text-center">Configuração</v-card-title>
+                        <v-card-text>
+                            <v-list-item class="text-center mb-4">
+                                Posição Selecionada:
+                                <v-chip variant="flat" color="primary">
+                                    {{ route.params.posicao }}
+                                </v-chip>
+                            </v-list-item>
+                            <v-list-item class="text-center">
+                                Modo Selecionado:
+                                <v-chip variant="flat" color="primary">
+                                    {{ route.params.modo }}
+                                </v-chip>
+                            </v-list-item>
+                        </v-card-text>
+                        <v-card-actions class="actions" style="position: absolute; bottom: 0;">
+                            <v-btn stacked to="/"><v-icon>mdi-arrow-left</v-icon>Voltar</v-btn>
+                            <v-btn stacked @click="resetFlag = true"><v-icon>mdi-sync</v-icon>Resetar</v-btn>
+                        </v-card-actions>
+                    </v-card>
+                </div>
         </div>
     </div>
 </template>
@@ -36,49 +36,52 @@ const resetFlag = ref(false)
 </script>
 
 <style scoped>
-/* VIEWPORT FIXO */
 #rotatable {
-    position: fixed;
-    inset: 0;
-    overflow: hidden;
-    background: #111;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #111;
 }
 
+/* Conteúdo principal que contém QUADRA + DRAWER */
 .content {
-    width: 100vw;
-    height: 100vh;
-    display: flex;
+  width: 100dvw;
+  height: 100dvh;
+  display: flex;
 }
 
-/* INFO NORMAL (LANDSCAPE REAL) */
+/* Drawer normal em landscape (lado direito) */
 .info {
-    width: 40dvw;
-    height: 100dvh;
-    background: rgb(56, 56, 56);
+  background: rgb(56, 56, 56);
 }
 
-/* ROTACIONAR TUDO EM PORTRAIT */
+/* Portrait → quadra em cima, drawer embaixo */
+.actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
 @media (orientation: portrait) {
-    .content {
-        transform: rotate(90deg);
-        width: 100vh;
-        /* virou horizontal */
-        height: 100vw;
-        /* virou vertical */
-        transform-origin: center center;
-    }
+  .content {
+    flex-direction: column; /* <- ESSA É A MUDANÇA */
+  }
 
-    /* Ajusta a posição para não ficar fora da tela */
-    #rotatable {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
+  .info {
+    width: 100%;
+    height: 45dvh; /* drawer na parte inferior */
+  }
+}
 
-    .info {
-        width: 40dvh;
-        /* equivalente ao landscape */
-        height: 100dvw;
-    }
+/* Landscape → quadra na esquerda, drawer na direita */
+@media (orientation: landscape) {
+  .content {
+    flex-direction: row; /* <- LADO A LADO */
+  }
+
+  .info {
+    width: 45dvw;
+    height: 100%;
+  }
 }
 </style>

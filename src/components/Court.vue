@@ -1,5 +1,5 @@
 <template>
-  <v-card width="100%" height="100dvh" class="d-flex justify-start pa-7">
+  <v-card width="100%" height="100dvh" class="d-flex justify-start pa-7" >
     <v-card ref="courtRef" class="court" color="orange" style="
         border: 2px solid white;
         border-right: 8px dashed white;
@@ -46,7 +46,7 @@
       <div v-if="arrowData" class="arrow" :style="{
         top: arrowData.y + 'px',
         left: arrowData.x + 'px',
-        transform: `translate(-50%, -50%) rotate(${arrowData.angle}deg)`
+        transform: `translate(-50%, -50%) rotate(${arrowData.angle - 90}deg)`
       }">
         <span></span><span></span><span></span>
       </div>
@@ -76,7 +76,7 @@ const stepI = ref(0);
 const posicao = ref(null);
 const arrowData = ref(null);
 const seta = ref(null);
-
+const isPortrait = ref(false);
 const courtRef = ref(null);
 const courtSize = ref({ w: 0, h: 0 });
 
@@ -114,24 +114,129 @@ onMounted(async () => {
   await load();
   window.addEventListener("resize", updateCourtSize);
   window.addEventListener("orientationchange", updateCourtSize);
+  window.addEventListener("orientationchange", positionTokens);
+  checkOrientation()
+  window.addEventListener('resize', () => {
+  nextTick(() => {
+    updateCourtSize();
+    positionTokens();
+  });
 });
-
+});
 async function load() {
   await waitForTokenRefs();
   updateCourtSize();
   await nextTick();
+  positionTokens()
+  // for (const id in tokenRefs.value) {
+  //   const el = tokenRefs.value[id];
+  //   const data = initial.value.find(p => p.id == id);
+  //   if (!el || !data) continue;
+
+  //   const motion = useMotion(el, {
+  //     initial: { x: XRes(data.x), y: YRes(data.y) }
+  //   });
+
+  //   motions.value[id] = motion;
+  //   tokenPositions.value[id] = { x: XRes(data.x), y: YRes(data.y) };
+  // }
+}
+function mostrarSetaRobusta(fromId, step) {
+  const elFrom = tokenRefs.value[fromId];
+  const r = 22.5; // meio do avatar (px) — mantenha ou calcule dinamicamente se variar size
+
+  const courtR = courtRect();
+  if (!courtR) return;
+
+  // rect do elemento atual (pega posição real na tela, inclusive se estiver animando)
+  const rectFrom = elRect(elFrom);
+  if (!rectFrom) return;
+
+  // Centro atual do token (em coordenadas relativas ao court)
+  const cx1 = rectFrom.left - courtR.left + rectFrom.width / 2;
+  const cy1 = rectFrom.top - courtR.top + rectFrom.height / 2;
+
+  // Centro destino (calculado a partir de step.x/step.y -> usando XRes/YRes)
+  const destX = XRes(step.x);
+  const destY = YRes(step.y);
+  const cx2 = destX + rectFrom.width / 2; // se avatar tiver mesmo size; senão calcule a partir de size
+  const cy2 = destY + rectFrom.height / 2;
+
+  // dx/dy no sistema de pixels (y cresce para baixo)
+  const dx = cx2 - cx1;
+  const dy = cy2 - cy1;
+
+  // ângulo em graus usando atan2(dy, dx) — funciona no sistema de coordenadas de tela
+  const ang = (Math.atan2(dy, dx) * 180) / Math.PI;
+
+  const dist = Math.hypot(dx, dy) || 1;
+  const ux = dx / dist;
+  const uy = dy / dist;
+
+  // ponto de partida deslocado pelo raio (para não sair do centro do avatar)
+  const startX = cx1 + ux * r;
+  const startY = cy1 + uy * r;
+
+  // comprimento da seta (metade da distância, por exemplo)
+  const len = dist * 0.5;
+  const midX = startX + ux * (len / 2);
+  const midY = startY + uy * (len / 2);
+
+  // Atribui ao reactive usado pelo template (coordenadas em px relativas ao court)
+  arrowData.value = { x: midX, y: midY, angle: ang };
+}
+function elRect(el) {
+  if (!el) return null;
+  // tokenRefs guarda o que você setou com ref => (tokenRefs[box.id] = el)
+  // Pode ser um componente Vuetify (com $el) ou um HTMLElement direto
+  const node = el.$el ?? el;
+  if (!node || !node.getBoundingClientRect) return null;
+  return node.getBoundingClientRect();
+}
+
+function courtRect() {
+  if (!courtRef.value) return null;
+  const node = courtRef.value.$el ?? courtRef.value;
+  return node.getBoundingClientRect();
+}
+function positionTokens() {
+  const modo = route.params.modo;
+  const pos = posicao.value;
+  const steps = Movimentos[modo]?.[pos]?.steps || [];
 
   for (const id in tokenRefs.value) {
     const el = tokenRefs.value[id];
-    const data = initial.value.find(p => p.id == id);
-    if (!el || !data) continue;
+
+    let stepData;
+
+    // Se a animação ainda não começou → usar initial
+    if (!started.value || stepI.value === 0) {
+      stepData = initial.value.find(p => p.id == id);
+    }
+    // Se já estamos no meio da animação → pegar posição atual do step
+    else {
+      const current = steps[stepI.value - 1]; // step atual já executado
+
+      if (current && current.id == id) {
+        // posição do step atual
+        stepData = current;
+      } else {
+        // posição atual armazenada (boa para tokens que não se movem neste step)
+        stepData = {
+          x: tokenPositions.value[id].x / courtSize.value.w,
+          y: tokenPositions.value[id].y / courtSize.value.h
+        };
+      }
+    }
+
+    if (!stepData) continue;
 
     const motion = useMotion(el, {
-      initial: { x: XRes(data.x), y: YRes(data.y) }
+      initial: { x: XRes(stepData.x), y: YRes(stepData.y) }
     });
 
     motions.value[id] = motion;
-    tokenPositions.value[id] = { x: XRes(data.x), y: YRes(data.y) };
+    tokenPositions.value[id] = { x: XRes(stepData.x), y: YRes(stepData.y) };
   }
 }
 
@@ -215,13 +320,9 @@ function mostrarSeta(pAtual, pNext) {
   const cy2 = pNext.y + r;
 
   const dx = cx2 - cx1;
-  const dy = cy2 - cy1;
-  console.log(cx2)
-  console.log(cx1)
-  console.log(cy1)
-  console.log(cy2)
+  const dy = -(cy2 - cy1);
 
-  let ang = (Math.atan2(dy, dx) * 90) / Math.PI;
+  let ang = (Math.atan2(dy, dx) * 180) / Math.PI;
 
   const dist = Math.sqrt(dx * dx + dy * dy) || 1;
   const ux = dx / dist;
@@ -262,10 +363,10 @@ async function executarMovimento(modo, posicao) {
 
 function executarInformacoes(modo, posicao) {
   const step = Movimentos[modo][posicao].steps[stepI.value];
-  const pAtual = tokenPositions.value[step.id];
-  const pNext = { x: XRes(step.x), y: YRes(step.y) };
+  // const pAtual = tokenPositions.value[step.id];
+  // const pNext = { x: XRes(step.x), y: YRes(step.y) };
 
-  mostrarSeta(pAtual, pNext);
+  mostrarSetaRobusta(step.id, step);
 
   overlay.value = true;
   activeStep.value = step.id;
@@ -300,7 +401,7 @@ async function startPlay(posi) {
     y2: pAtual.y + 22 + (pNext.y - pAtual.y) * 0.5
   };
 
-  mostrarSeta(pAtual, pNext);
+  // mostrarSeta(pAtual, pNext);
 }
 
 /* =========================
@@ -361,7 +462,7 @@ const Movimentos = {
         { id: 4, x: 0.25, y: 0.11, shortName: "P", text: "Você (Ponteiro) recua para a linha de recepção." },
         { id: 3, x: 0.85, y: 0.52, shortName: "C", text: "O Central não pode ultrapassar você à esquerda." },
         { id: 6, x: 0.23, y: 0.49, shortName: "L" },
-        { id: 1, x: 0.27, y: 0.87, shortName: "P" },
+        { id: 1, x: 0.35, y: 0.87, shortName: "P" },
         { id: 2, x: 0.83, y: 0.85, shortName: "Lev", text: "só levanta...." }
       ]
     }
@@ -431,8 +532,8 @@ const Movimentos = {
 
 .arrow span {
   display: block;
-  width: 1.5vw;
-  height: 1.5vw;
+  width: 0.8em;
+  height: 0.8em;
   border-bottom: 5px solid white;
   border-right: 5px solid white;
   rotate: 45deg;
