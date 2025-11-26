@@ -245,7 +245,7 @@ function reposition() {
 /* =========================
    LÓGICA DE PAPÉIS
 ========================= */
-const papeis = ["P", "OP", "L", "P", "Lev", "C"];
+const papeis = ["Lev", "P", "C", "OP", "P", "L"];
 const mapPapelParaShort = {
   Ponteiro: "P",
   Central: "C",
@@ -434,12 +434,22 @@ const Movimentos = {
   Recepcao: {
     2: {
       steps: [
-        { id: 1, x: 0.05, y: 0.87, shortName: "Lev", text: "só levanta...." },
-        { id: 5, x: 0, y: 0.11, shortName: "OP", text: "O Oposto recua, pois não participa da recepção." },
-        { id: 3, x: 0.85, y: 0.52, shortName: "C", text: "O Central não pode ultrapassar você à esquerda." },
-        { id: 4, x: 0.25, y: 0.87, shortName: "P", text: "Você (Ponteiro) recua para a linha de recepção." },
+        { id: 1, x: 0.05, y: 0.87, shortName: "Lev", text: "Levantador recua, ficando mais atrás do ponteiro" },
+        { id: 2, x: 0.25, y: 0.87, shortName: "P", text: "Você (Ponteiro) recua para a linha de recepção, no lugar do levantador." },
+        { id: 3, x: 0.85, y: 0.46, shortName: "C" },
+        { id: 5, x: 0.25, y: 0.11, shortName: "P" },
         { id: 6, x: 0.23, y: 0.49, shortName: "L" },
-        { id: 1, x: 0.35, y: 0.87, shortName: "P" },
+        { id: 4, x: 0.85, y: 0.11, shortName: "OP" },
+      ]
+    },
+    3: {
+      steps: [
+        { id: 5, x: 0.05, y: 0.30, shortName: "OP", text: "Oposto recua, ficando no fundo de quadra" },
+        { id: 4, x: 0.85, y: 0.01, shortName: "C", text: "Central fica mais a esquerda, para que o ponteiro possa ficar na posicao 5" },
+        { id: 3, x: 0.25, y: 0.11, shortName: "P", text: "Você (Ponteiro) recua para a linha de recepção, no lugar do oposto." },
+        { id: 6, x: 0.25, y: 0.49, shortName: "P" },
+        { id: 1, x: 0.25, y: 0.87, shortName: "L" },
+        { id: 2, x: 0.85, y: 0.82, shortName: "Lev" },
       ]
     },
     4: {
@@ -449,7 +459,7 @@ const Movimentos = {
         { id: 3, x: 0.85, y: 0.52, shortName: "C", text: "O Central não pode ultrapassar você à esquerda." },
         { id: 6, x: 0.23, y: 0.49, shortName: "L" },
         { id: 1, x: 0.35, y: 0.87, shortName: "P" },
-        { id: 2, x: 0.83, y: 0.85, shortName: "Lev", text: "só levanta...." }
+        { id: 2, x: 0.83, y: 0.85, shortName: "Lev" }
       ]
     }
   }
