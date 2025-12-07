@@ -12,7 +12,9 @@
       <!-- HITBOXES -->
       <v-card v-for="box in hitboxes" :key="box.id" flat tile position="absolute" color="rgba(0,0,0,0.2)"
         class="d-flex justify-center align-center" :width="box.W + '%'" :height="box.H + '%'" :location="box.L"
-        @click="startPlay(box.id)" />
+        @click="startPlay(box.id)">
+        <div class="hitbox-label">{{ box.id }}</div>
+      </v-card>
 
       <!-- TOKENS -->
       <div v-for="box in initial" :key="box.id" style="pointer-events:none;">
@@ -27,7 +29,7 @@
         <!-- BALÃO DE TEXTO -->
         <div v-if="activeMessage && activeStep === box.id" class="msg" :style="{
           top: (box.id <= 2 ? tokenPositions[box.id]?.y - 55 : tokenPositions[box.id]?.y + 55) + 'px',
-          left: (tokenPositions[box.id]?.x - 45) + 'px'
+          left: (tokenPositions[box.id]?.x - 20) + 'px'
         }">
           {{ activeMessage }}
         </div>
@@ -130,7 +132,7 @@ async function load() {
   await nextTick();
   positionTokens()
 }
-function mostrarSetaRobusta(fromId, step) {
+function mostrarSeta(fromId, step) {
   const elFrom = tokenRefs.value[fromId];
   const avatarRadius = 22.5; // meio do avatar (px) — mantenha ou calcule dinamicamente se variar size
 
@@ -199,8 +201,6 @@ function positionTokens() {
     tokenPositions.value[id] = { x: XRes(data.x), y: YRes(data.y) };
   }
 }
-
-
 /* =========================
    FINALIZAR E RECARREGAR
 ========================= */
@@ -245,12 +245,13 @@ function reposition() {
 /* =========================
    LÓGICA DE PAPÉIS
 ========================= */
-const papeis = ["Lev", "P", "C", "OP", "P", "L"];
+const papeis = ["Lev", "P1", "C", "OP", "P2", "L"];
 const mapPapelParaShort = {
-  Ponteiro: "P",
+  Ponteiro: "P1",
   Central: "C",
   Oposto: "OP",
   Levantador: "Lev",
+  Ponteiro1: "P2",
   Líbero: "L"
 };
 const papelUsuarioShort = mapPapelParaShort[params.value.posicao];
@@ -265,58 +266,68 @@ function calcularRotacao(posicaoClicada) {
 }
 
 function aplicarShortnames(posicaoClicada) {
-  const nomes = calcularRotacao(posicaoClicada);
+  // corrigirLiberoNaoAvancar();
+  let nomes = calcularRotacao(posicaoClicada);
+
+  nomes = corrigirLiberoECentral(nomes);
   initial.value.forEach((t, i) => {
     t.shortName = nomes[i];
   });
 }
+function corrigirLiberoECentral(nomes) {
+  const frente = [1, 2, 3]; // índices (2,3,4)
+  const idxC = nomes.indexOf("C");
+  const idxL = nomes.indexOf("L");
+  const n = nomes.length;
 
+  if (idxC === -1 || idxL === -1) return nomes;
+
+  // cálculo da posição ideal do L
+  let posLIdeal = (idxC + 3) % n; // wrap automático
+
+  // se o L já está na posição certa e não está na frente, ok
+  if (idxL === posLIdeal && !frente.includes(idxL)) return nomes;
+
+  // se a posição ideal do L cair na frente → troca C ↔ L
+  if (frente.includes(posLIdeal)) {
+    nomes[idxC] = "L";
+    nomes[idxL] = "C";
+    return nomes;
+  }
+
+  // caso normal: mover o L para a posição correta
+  const jogadorQueEstava = nomes[posLIdeal];
+  nomes[posLIdeal] = "L";
+  nomes[idxL] = jogadorQueEstava;
+
+  return nomes;
+}
 /* =========================
    SETA
 ========================= */
-function mostrarSeta(pAtual, pNext) {
-  const r = 22.5;
-
-  const cx1 = pAtual.x + r;
-  const cy1 = pAtual.y + r;
-  const cx2 = pNext.x + r;
-  const cy2 = pNext.y + r;
-
-  const dx = cx2 - cx1;
-  const dy = -(cy2 - cy1);
-
-  let ang = (Math.atan2(dy, dx) * 180) / Math.PI;
-
-  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-  const ux = dx / dist;
-  const uy = dy / dist;
-
-  const startX = cx1 + ux * r;
-  const startY = cy1 + uy * r;
-
-  const len = dist * 0.5;
-  const midX = startX + ux * (len / 2);
-  const midY = startY + uy * (len / 2);
-
-  // Compensa a rotação do container
-  const containerRot = window.innerHeight > window.innerWidth ? 90 : 0;
-  arrowData.value = { x: midX, y: midY, angle: ang + containerRot };
-}
 
 /* =========================
    MOVIMENTOS
 ========================= */
 async function executarMovimento(modo, posicao) {
   const step = Movimentos[modo][posicao].steps[stepI.value];
-  const motion = motions.value[step.id];
 
+  // pegar o token pelo papel
+  const jogadorReal = initial.value.find(j => j.shortName === step.player);
+
+  if (!jogadorReal) {
+    console.warn("Jogador não encontrado para player:", step.player);
+    return;
+  }
+
+  const motion = motions.value[jogadorReal.id];
   await motion.apply({
     x: XRes(step.x),
     y: YRes(step.y),
     transition: { duration: 600 }
   });
 
-  tokenPositions.value[step.id] = {
+  tokenPositions.value[jogadorReal.id] = {
     x: XRes(step.x),
     y: YRes(step.y)
   };
@@ -325,16 +336,20 @@ async function executarMovimento(modo, posicao) {
 }
 
 function executarInformacoes(modo, posicao) {
+  console.log(posicao)
   const step = Movimentos[modo][posicao].steps[stepI.value];
 
+  console.log(step.player)
+  console.log(initial.value)
   // 👇 PEGA O PAPEL REAL DO JOGADOR NA ROTAÇÃO
-  const jogadorReal = initial.value.find(j => j.id === step.id);
-
+  const jogadorReal = initial.value.find(j => j.shortName === step.player);
   // 👇 MOSTRA SETA NORMAL
-  mostrarSetaRobusta(step.id, step);
+  if (step?.arrow) {
+    mostrarSeta(jogadorReal.id, step);
+  }
 
   overlay.value = true;
-  activeStep.value = step.id;
+  activeStep.value = jogadorReal.id;
 
   // 👇 AQUI ESTAVA O ERRO:
   // activeMessage.value = step.text;  (ISTO IGNORA A ROTAÇÃO)
@@ -418,48 +433,79 @@ const hitboxes = ref([
 ]);
 
 const initial = ref([
-  { id: 1, x: 0.25, y: 0.87, shortName: "P" },
+  { id: 1, x: 0.25, y: 0.87, shortName: "P1" },
   { id: 2, x: 0.85, y: 0.87, shortName: "Lev" },
   { id: 3, x: 0.85, y: 0.49, shortName: "C" },
   { id: 4, x: 0.85, y: 0.11, shortName: "L" },
   { id: 5, x: 0.25, y: 0.11, shortName: "OP" },
-  { id: 6, x: 0.25, y: 0.49, shortName: "P" }
+  { id: 6, x: 0.25, y: 0.49, shortName: "P2" }
 ]);
 // X = 0 -- Esquerda
-// X = 100 -- Direita
+// X = 1.0 -- Direita
 
 // Y = 0 -- Cima
-// Y = 100 -- Baixo
+// Y = 1.0 -- Baixo
 const Movimentos = {
   Recepcao: {
+    1: {
+      steps: [
+        { player: "C", x: 0.85, y: 0.97, shortName: "C", arrow: true, text: "Fica bem a direita para abrir espaço" },
+        { player: "OP", x: 0.98, y: 0.82, shortName: "OP", arrow: true, text: "Fica bem a direita também" },
+        { player: "Lev", x: 0.80, y: 0.70, shortName: "Lev", arrow: true, text: "Levantador sobe para a 3 pois não participa da recepção devendo estar atrás do oposto" },
+        { player: "L", x: 0.25, y: 0.49, shortName: "L", arrow: true, text: "Assume a posição 6 do levantador, devendo estar a esquerda do levantador" },
+        { player: "P2", x: 0.25, y: 0.11, shortName: "P2", arrow: true, text: "Assume a posição 4 pois o libero assume a 6." },
+        { player: "P1", x: 0.25, y: 0.87, shortName: "P1", arrow: false, text: "Você (Ponteiro) mantém a posição." },
+      ]
+    },
     2: {
       steps: [
-        { id: 1, x: 0.05, y: 0.87, shortName: "Lev", text: "Levantador recua, ficando mais atrás do ponteiro" },
-        { id: 2, x: 0.25, y: 0.87, shortName: "P", text: "Você (Ponteiro) recua para a linha de recepção, no lugar do levantador." },
-        { id: 3, x: 0.85, y: 0.46, shortName: "C" },
-        { id: 5, x: 0.25, y: 0.11, shortName: "P" },
-        { id: 6, x: 0.23, y: 0.49, shortName: "L" },
-        { id: 4, x: 0.85, y: 0.11, shortName: "OP" },
+        { player: "Lev", x: 0.05, y: 0.98, shortName: "Lev", arrow: true, text: "Levantador se esconde, pois não participa da recepção." },
+        { player: "P1", x: 0.25, y: 0.87, shortName: "P1", arrow: true, text: "Você (Ponteiro) recua para a linha de recepção no lugar do levantador." },
+        { player: "OP", x: 0.87, y: 0.10, shortName: "OP", arrow: false },
+        { player: "L", x: 0.25, y: 0.49, shortName: "L", arrow: false, text: "Mantém a posição" },
+        { player: "C", x: 0.85, y: 0.49, shortName: "C", arrow: true, text: "Mantém a posição" },
+        { player: "P2", x: 0.25, y: 0.11, shortName: "P2", arrow: false, text: "Mantém posição." },
       ]
     },
     3: {
       steps: [
-        { id: 5, x: 0.05, y: 0.30, shortName: "OP", text: "Oposto recua, ficando no fundo de quadra" },
-        { id: 4, x: 0.85, y: 0.01, shortName: "C", text: "Central fica mais a esquerda, para que o ponteiro possa ficar na posicao 5" },
-        { id: 3, x: 0.25, y: 0.11, shortName: "P", text: "Você (Ponteiro) recua para a linha de recepção, no lugar do oposto." },
-        { id: 6, x: 0.25, y: 0.49, shortName: "P" },
-        { id: 1, x: 0.25, y: 0.87, shortName: "L" },
-        { id: 2, x: 0.85, y: 0.82, shortName: "Lev" },
+        { player: "OP", x: 0.05, y: 0.30, shortName: "OP", arrow: true, text: "O Oposto recua (se escondendo), pois não participa da recepção." },
+        { player: "P1", x: 0.25, y: 0.11, shortName: "P1", arrow: true, text: "Você (Ponteiro) recua para a linha de recepção no lugar do oposto." },
+        { player: "L", x: 0.25, y: 0.87, shortName: "L", arrow: false, text: "Mantém a posição" },
+        { player: "P2", x: 0.25, y: 0.49, shortName: "P2", arrow: false, text: "Mantém posição." },
+        { player: "C", x: 0.85, y: 0.01, shortName: "C", arrow: true, text: "Precisa ficar bem a esquerda da posição 4 (devido ao ponteiro estar na 5)." },
+        { player: "Lev", x: 0.85, y: 0.75, shortName: "Lev", arrow: true, }
       ]
     },
     4: {
       steps: [
-        { id: 5, x: 0, y: 0.11, shortName: "OP", text: "O Oposto recua, pois não participa da recepção." },
-        { id: 4, x: 0.25, y: 0.11, shortName: "P", text: "Você (Ponteiro) recua para a linha de recepção." },
-        { id: 3, x: 0.85, y: 0.52, shortName: "C", text: "O Central não pode ultrapassar você à esquerda." },
-        { id: 6, x: 0.23, y: 0.49, shortName: "L" },
-        { id: 1, x: 0.35, y: 0.87, shortName: "P" },
-        { id: 2, x: 0.83, y: 0.85, shortName: "Lev" }
+        { player: "OP", x: 0, y: 0.70, shortName: "OP", arrow: true, text: "O Oposto recua (se escondendo), pois não participa da recepção." },
+        { player: "OP", x: 0, y: 0.70, shortName: "OP", text: "Precisa ficar a Direita da posicão 5, Esquerda da posicao 1." },
+        { player: "L", x: 0.23, y: 0.49, shortName: "L", arrow: true, text: "Assume a defesa na posicão 6" },
+        { player: "P1", x: 0.25, y: 0.11, shortName: "P1", arrow: true, text: "Você (Ponteiro) recua para a linha de recepção." },
+        { player: "P2", x: 0.25, y: 0.87, shortName: "P2", text: "Mantém posição." },
+        { player: "C", x: 0.85, y: 0.94, shortName: "C", arrow: true, },
+        { player: "Lev", x: 0.85, y: 0.75, shortName: "Lev", arrow: true, }
+      ]
+    },
+    5: {
+      steps: [
+        { player: "OP", x: 0.05, y: 0.95, shortName: "OP", arrow: true, text: "O Oposto recua (se escondendo), pois não participa da recepção." },
+        { player: "L", x: 0.25, y: 0.87, shortName: "L", arrow: true, text: "Assume a defesa na posicão 6" },
+        { player: "P1", x: 0.25, y: 0.49, shortName: "P1", arrow: true, text: "Você (Ponteiro) recua para a linha de recepção." },
+        { player: "Lev", x: 0.75, y: 0, shortName: "Lev", arrow: true, },
+        { player: "C", x: 0.85, y: 0.05, shortName: "C", arrow: true, },
+        { player: "P2", x: 0.25, y: 0.11, shortName: "P2", text: "Mantém posição." },
+      ]
+    },
+    6: {
+      steps: [
+        { player: "C", x: 0.88, y: 0, shortName: "C", arrow: true, text: "Central abre espaço para a esquerda, permitindo que o Ponteiro vá para a 5." },
+        { player: "Lev", x: 0.75, y: 0.25, shortName: "Lev", arrow: true, text: "Vai para a frente, pois não participa da recepção." },
+        { player: "P1", x: 0.22, y: 0.49, shortName: "P1", arrow: true, text: "Faz um leve recuo para permitir o outro Ponteiro ao lado." },
+        { player: "P2", x: 0.25, y: 0.11, shortName: "P2", arrow: true, text: "Ponteiro recua para a linha de recepção, no lugar do levantador." },
+        { player: "OP", x: 0.85, y: 0.95, shortName: "OP", arrow: false },
+        { player: "L", x: 0.25, y: 0.87, shortName: "L", arrow: false, text: "Mantém posição" },
       ]
     }
   }
@@ -546,6 +592,17 @@ const Movimentos = {
 
 .arrow span:nth-child(3) {
   animation-delay: -0.4s;
+}
+
+.hitbox-label {
+  position: absolute;
+  font-size: 8rem;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.185);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none; // não atrapalha o clique no card
 }
 
 @keyframes animate {
