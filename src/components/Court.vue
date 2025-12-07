@@ -454,48 +454,47 @@ const Movimentos = {
         { player: "Lev", x: 0.80, y: 0.70, shortName: "Lev", arrow: true, text: "Levantador sobe para a 3 pois não participa da recepção devendo estar atrás do oposto" },
         { player: "L", x: 0.25, y: 0.49, shortName: "L", arrow: true, text: "Assume a posição 6 do levantador, devendo estar a esquerda do levantador" },
         { player: "P2", x: 0.25, y: 0.11, shortName: "P2", arrow: true, text: "Assume a posição 4 pois o libero assume a 6." },
-        { player: "P1", x: 0.25, y: 0.87, shortName: "P1", arrow: false, text: "Você (Ponteiro) mantém a posição." },
+        { player: "P1", x: 0.25, y: 0.87, shortName: "P1", arrow: false, text: "Mantém a posição." },
       ]
     },
     2: {
       steps: [
         { player: "Lev", x: 0.05, y: 0.98, shortName: "Lev", arrow: true, text: "Levantador se esconde, pois não participa da recepção." },
-        { player: "P1", x: 0.25, y: 0.87, shortName: "P1", arrow: true, text: "Você (Ponteiro) recua para a linha de recepção no lugar do levantador." },
-        { player: "OP", x: 0.87, y: 0.10, shortName: "OP", arrow: false },
+        { player: "P1", x: 0.25, y: 0.87, shortName: "P1", arrow: true, text: "Recua para a linha de recepção no lugar do levantador." },
+        { player: "OP", x: 0.87, y: 0.10, shortName: "OP", arrow: false, text: "Mantém a posição" },
         { player: "L", x: 0.25, y: 0.49, shortName: "L", arrow: false, text: "Mantém a posição" },
-        { player: "C", x: 0.85, y: 0.49, shortName: "C", arrow: true, text: "Mantém a posição" },
+        { player: "C", x: 0.85, y: 0.49, shortName: "C", arrow: false, text: "Mantém a posição" },
         { player: "P2", x: 0.25, y: 0.11, shortName: "P2", arrow: false, text: "Mantém posição." },
       ]
     },
     3: {
       steps: [
         { player: "OP", x: 0.05, y: 0.30, shortName: "OP", arrow: true, text: "O Oposto recua (se escondendo), pois não participa da recepção." },
-        { player: "P1", x: 0.25, y: 0.11, shortName: "P1", arrow: true, text: "Você (Ponteiro) recua para a linha de recepção no lugar do oposto." },
+        { player: "C", x: 0.85, y: 0.01, shortName: "C", arrow: true, text: "Precisa ficar bem a esquerda da posição 4 (devido ao ponteiro ir para a 5)." },
+        { player: "P1", x: 0.29, y: 0.11, shortName: "P1", arrow: true, text: "Recua para a linha de recepção no lugar do oposto (devendo estar levemente a frente da posicao 6)." },
         { player: "L", x: 0.25, y: 0.87, shortName: "L", arrow: false, text: "Mantém a posição" },
         { player: "P2", x: 0.25, y: 0.49, shortName: "P2", arrow: false, text: "Mantém posição." },
-        { player: "C", x: 0.85, y: 0.01, shortName: "C", arrow: true, text: "Precisa ficar bem a esquerda da posição 4 (devido ao ponteiro estar na 5)." },
-        { player: "Lev", x: 0.85, y: 0.75, shortName: "Lev", arrow: true, }
+        { player: "Lev", x: 0.85, y: 0.75, shortName: "Lev", arrow: false, text: "Mantém posição." }
       ]
     },
     4: {
       steps: [
-        { player: "OP", x: 0, y: 0.70, shortName: "OP", arrow: true, text: "O Oposto recua (se escondendo), pois não participa da recepção." },
-        { player: "OP", x: 0, y: 0.70, shortName: "OP", text: "Precisa ficar a Direita da posicão 5, Esquerda da posicao 1." },
-        { player: "L", x: 0.23, y: 0.49, shortName: "L", arrow: true, text: "Assume a defesa na posicão 6" },
-        { player: "P1", x: 0.25, y: 0.11, shortName: "P1", arrow: true, text: "Você (Ponteiro) recua para a linha de recepção." },
+        { player: "OP", x: 0, y: 0.70, shortName: "OP", arrow: true, text: "O Oposto recua, pois não participa da recepção ,(precisando estar entre as posições 6 e 1)." },
+        { player: "L", x: 0.23, y: 0.49, shortName: "L", arrow: true, text: "Assume a defesa na posicão 6, (recuando levemente para possibilitar o ponteiro na 5)" },
+        { player: "P1", x: 0.25, y: 0.11, shortName: "P1", arrow: true, text: "Recua para a linha de recepção (ficando levemente a frente do libero)." },
         { player: "P2", x: 0.25, y: 0.87, shortName: "P2", text: "Mantém posição." },
-        { player: "C", x: 0.85, y: 0.94, shortName: "C", arrow: true, },
-        { player: "Lev", x: 0.85, y: 0.75, shortName: "Lev", arrow: true, }
+        { player: "C", x: 0.85, y: 0.94, shortName: "C", arrow: false, text: "Mantém posição." },
+        { player: "Lev", x: 0.85, y: 0.75, shortName: "Lev", arrow: false, text: "Mantém posição." }
       ]
     },
     5: {
       steps: [
-        { player: "OP", x: 0.05, y: 0.95, shortName: "OP", arrow: true, text: "O Oposto recua (se escondendo), pois não participa da recepção." },
-        { player: "L", x: 0.25, y: 0.87, shortName: "L", arrow: true, text: "Assume a defesa na posicão 6" },
-        { player: "P1", x: 0.25, y: 0.49, shortName: "P1", arrow: true, text: "Você (Ponteiro) recua para a linha de recepção." },
-        { player: "Lev", x: 0.75, y: 0, shortName: "Lev", arrow: true, },
-        { player: "C", x: 0.85, y: 0.05, shortName: "C", arrow: true, },
-        { player: "P2", x: 0.25, y: 0.11, shortName: "P2", text: "Mantém posição." },
+        { player: "OP", x: 0.05, y: 0.95, shortName: "OP", arrow: true, text: "O Oposto recua, pois não participa da recepção." },
+        { player: "L", x: 0.25, y: 0.87, shortName: "L", arrow: true, text: "Assume a defesa na posicão 1" },
+        { player: "P1", x: 0.25, y: 0.49, shortName: "P1", arrow: true, text: "Assume a defesa na posicão 6." },
+        { player: "Lev", x: 0.75, y: 0, shortName: "Lev", arrow: true, text: "Fica bem a esquerda." },
+        { player: "C", x: 0.85, y: 0.05, shortName: "C", arrow: true, text: "Fica bem a esquerda também." },
+        { player: "P2", x: 0.25, y: 0.11, shortName: "P2", text: "Assume a recepção na posicao 5 (deve estar a direita da 4 e da 3)." },
       ]
     },
     6: {
@@ -504,7 +503,7 @@ const Movimentos = {
         { player: "Lev", x: 0.75, y: 0.25, shortName: "Lev", arrow: true, text: "Vai para a frente, pois não participa da recepção." },
         { player: "P1", x: 0.22, y: 0.49, shortName: "P1", arrow: true, text: "Faz um leve recuo para permitir o outro Ponteiro ao lado." },
         { player: "P2", x: 0.25, y: 0.11, shortName: "P2", arrow: true, text: "Ponteiro recua para a linha de recepção, no lugar do levantador." },
-        { player: "OP", x: 0.85, y: 0.95, shortName: "OP", arrow: false },
+        { player: "OP", x: 0.85, y: 0.95, shortName: "OP", arrow: false, text: "Mantém posição" },
         { player: "L", x: 0.25, y: 0.87, shortName: "L", arrow: false, text: "Mantém posição" },
       ]
     }
